@@ -9,22 +9,28 @@
   <script src="script.js" defer></script>
 </head>
 <body>
- 
-<header class="navbar">
-  <a class="logo" href="#">✦ Lumora</a>
 
-  <div class="nav-actions">
-    <span class="tag">AI STUDY COMPANION</span>
-    <button id="themeToggle" class="theme-toggle" type="button"
-      aria-label="Switch to dark mode">
-      ☾ Dark
-    </button>
-  </div>
-</header>
+  <header class="navbar">
+    <a class="logo" href="#">✦ Lumora</a>
+
+    <div class="nav-actions">
+      <span class="tag">AI STUDY COMPANION</span>
+      <button id="themeToggle" class="theme-toggle" type="button"
+        aria-label="Switch to dark mode">
+        ☾ Dark
+      </button>
+    </div>
+  </header>
 
   <main class="hero">
+
     <span class="eyebrow">YOUR PERSONAL AI STUDY SPACE</span>
-    <h1>Learn smarter.<br><span>Remember longer.</span></h1>
+
+    <h1>
+      Learn smarter.<br>
+      <span>Remember longer.</span>
+    </h1>
+
     <p class="intro">
       Turn your notes into summaries, quizzes and flashcards.
       Make every study session count.
@@ -32,21 +38,106 @@
 
     <section class="study-card">
       <label for="notes">What are you studying today?</label>
-      <textarea id="notes" placeholder="Paste your class notes or enter a topic..."></textarea>
+
+      <textarea id="notes"
+        placeholder="Paste your class notes or enter a topic..."></textarea>
+
       <div class="card-bottom">
         <span id="counter">0 characters</span>
-        <button id="generateBtn">✦ Generate study set</button>
+        <button id="generateBtn" type="button">
+          ✦ Generate study set
+        </button>
       </div>
+
       <p id="message" aria-live="polite"></p>
     </section>
 
-    <div class="features">
-      <div class="feature"><span>✧</span><strong>Smart summaries</strong><p>Understand key ideas faster.</p></div>
-      <div class="feature"><span>◈</span><strong>Quick quizzes</strong><p>Check what you remember.</p></div>
-      <div class="feature"><span>▱</span><strong>Flashcards</strong><p>Review important concepts.</p></div>
-    </div>
+    <section class="features">
+      <div class="feature">
+        <span>✧</span>
+        <strong>Smart summaries</strong>
+        <p>Understand key ideas faster.</p>
+      </div>
+
+      <div class="feature">
+        <span>◈</span>
+        <strong>Quick quizzes</strong>
+        <p>Check what you remember.</p>
+      </div>
+
+      <div class="feature">
+        <span>▱</span>
+        <strong>Flashcards</strong>
+        <p>Review important concepts.</p>
+      </div>
+    </section>
+
+    <!-- Study dashboard -->
+    <section class="dashboard">
+
+      <div class="dashboard-heading">
+        <span class="eyebrow">YOUR LEARNING WORKSPACE</span>
+        <h2>Your study set</h2>
+        <p>Your summaries, practice questions and revision cards in one place.</p>
+      </div>
+
+      <!-- Summary section -->
+      <section class="result-card" id="summarySection">
+        <div class="section-heading">
+          <span class="section-icon">✧</span>
+          <div>
+            <h3>AI Summary</h3>
+            <p>Key ideas, made easier to understand.</p>
+          </div>
+        </div>
+
+        <div id="summaryOutput" class="result-content" aria-live="polite">
+          <p>Your generated summary will appear here.</p>
+        </div>
+
+        <div class="result-actions">
+          <button id="copySummaryBtn" type="button">Copy summary</button>
+          <button id="downloadSummaryBtn" type="button">Download</button>
+        </div>
+      </section>
+
+      <!-- Quiz section -->
+      <section class="result-card" id="quizSection">
+        <div class="section-heading">
+          <span class="section-icon">◈</span>
+          <div>
+            <h3>Knowledge Check</h3>
+            <p>Test your understanding with five questions.</p>
+          </div>
+        </div>
+
+        <div id="quizContainer" class="result-content">
+          <p>Your five-question quiz will appear here.</p>
+        </div>
+
+        <p id="quizScore" aria-live="polite"></p>
+      </section>
+
+      <!-- Flashcards section -->
+      <section class="result-card" id="flashcardsSection">
+        <div class="section-heading">
+          <span class="section-icon">▱</span>
+          <div>
+            <h3>Revision Flashcards</h3>
+            <p>Practise important terms and concepts.</p>
+          </div>
+        </div>
+
+        <div id="flashcardsContainer" class="result-content">
+          <p>Your flashcards will appear here.</p>
+        </div>
+      </section>
+
+    </section>
+
   </main>
 
   <footer>Made for curious minds. ✦ Lumora</footer>
+
 </body>
 </html>
