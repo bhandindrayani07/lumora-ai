@@ -10,9 +10,25 @@ const quizContainer = document.querySelector("#quizContainer");
 const flashcardsContainer = document.querySelector("#flashcardsContainer");
 const quizScore = document.querySelector("#quizScore");
 
+const historyContainer = document.querySelector("#historyContainer");
+
 let quizQuestions = [];
 let currentScore = 0;
 let answeredQuestions = new Set();
+let studyHistory = [];
+
+// Load saved study history
+try {
+  const savedHistory = localStorage.getItem("lumora-history");
+  studyHistory = savedHistory ? JSON.parse(savedHistory) : [];
+
+  if (!Array.isArray(studyHistory)) {
+    studyHistory = [];
+  }
+} catch (error) {
+  console.error("Could not load study history:", error);
+  studyHistory = [];
+}
 
 // Character counter
 notes.addEventListener("input", function () {
@@ -56,7 +72,11 @@ themeToggle.addEventListener("click", function () {
 function addText(parent, tag, text, className = "") {
   const element = document.createElement(tag);
   element.textContent = text;
-  if (className) element.className = className;
+
+  if (className) {
+    element.className = className;
+  }
+
   parent.appendChild(element);
   return element;
 }
@@ -64,7 +84,6 @@ function addText(parent, tag, text, className = "") {
 // Display the summary
 function showSummary(summary) {
   summaryOutput.replaceChildren();
-
   addText(summaryOutput, "p", summary);
 
   const copyButton = document.querySelector("#copySummaryBtn");
@@ -141,7 +160,10 @@ function showQuiz(questions) {
           optionButton.classList.add("correct-answer");
         } else {
           optionButton.classList.add("wrong-answer");
-          allOptions[question.answer].classList.add("correct-answer");
+
+          if (allOptions[question.answer]) {
+            allOptions[question.answer].classList.add("correct-answer");
+          }
         }
 
         addText(
@@ -202,6 +224,96 @@ function showFlashcards(cards) {
   });
 }
 
+// Save a generated study set
+function saveStudySet(topic, summary, quiz, flashcards) {
+  const item = {
+    id: Date.now(),
+    topic: topic.length > 60
+      ? topic.slice(0, 60) + "..."
+      : topic,
+    date: new Date().toISOString(),
+    summary: summary,
+    quiz: quiz,
+    flashcards: flashcards
+  };
+
+  // Keep the five most recent study sets
+  studyHistory.unshift(item);
+  studyHistory = studyHistory.slice(0, 5);
+
+  try {
+    localStorage.setItem(
+      "lumora-history",
+      JSON.stringify(studyHistory)
+    );
+
+    showHistory();
+    return true;
+  } catch (error) {
+    console.error("Could not save study history:", error);
+    message.textContent =
+      "Your study set was generated, but history could not be saved.";
+    return false;
+  }
+}
+
+// Display Study History
+function showHistory() {
+  if (!historyContainer) {
+    console.error(
+      'Study History container not found. Check for id="historyContainer" in index.html.'
+    );
+    return;
+  }
+
+  historyContainer.replaceChildren();
+
+  if (studyHistory.length === 0) {
+    addText(
+      historyContainer,
+      "p",
+      "Your study history will appear here."
+    );
+    return;
+  }
+
+  studyHistory.forEach(function (item) {
+    const entry = document.createElement("div");
+    entry.className = "history-item";
+
+    addText(entry, "h4", item.topic);
+
+    addText(
+      entry,
+      "p",
+      "Created: " + new Date(item.date).toLocaleString()
+    );
+
+    const viewButton = document.createElement("button");
+    viewButton.type = "button";
+    viewButton.textContent = "View study set";
+
+    viewButton.addEventListener("click", function () {
+      showSummary(item.summary);
+      showQuiz(item.quiz);
+      showFlashcards(item.flashcards);
+
+      message.textContent = "Previous study set loaded.";
+
+      document.querySelector("#summarySection").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
+
+    entry.appendChild(viewButton);
+    historyContainer.appendChild(entry);
+  });
+}
+
+// Show saved history when the page opens
+showHistory();
+
 // Generate the study set using the backend
 generateBtn.addEventListener("click", async function () {
   const studyNotes = notes.value.trim();
@@ -238,7 +350,9 @@ generateBtn.addEventListener("click", async function () {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not generate your study set.");
+      throw new Error(
+        data.error || "Could not generate your study set."
+      );
     }
 
     if (
@@ -248,25 +362,43 @@ generateBtn.addEventListener("click", async function () {
       !Array.isArray(data.flashcards) ||
       data.flashcards.length !== 5
     ) {
-      throw new Error("The AI returned an invalid study set. Please try again.");
+      throw new Error(
+        "The AI returned an invalid study set. Please try again."
+      );
     }
 
     showSummary(data.summary);
     showQuiz(data.quiz);
     showFlashcards(data.flashcards);
 
-    message.textContent = "Your Lumora study set is ready!";
+    const saved = saveStudySet(
+      studyNotes,
+      data.summary,
+      data.quiz,
+      data.flashcards
+    );
+
+    if (saved) {
+      message.textContent = "Your Lumora study set is ready!";
+    }
+
   } catch (error) {
     console.error("Generation error:", error);
 
-    summaryOutput.textContent = "Your summary could not be generated.";
-    quizContainer.textContent = "Your quiz could not be generated.";
-    flashcardsContainer.textContent = "Your flashcards could not be generated.";
+    summaryOutput.textContent =
+      "Your summary could not be generated.";
+
+    quizContainer.textContent =
+      "Your quiz could not be generated.";
+
+    flashcardsContainer.textContent =
+      "Your flashcards could not be generated.";
 
     message.textContent =
       error.message === "Failed to fetch"
         ? "Could not reach the server. Make sure Lumora is running."
         : error.message;
+
   } finally {
     generateBtn.disabled = false;
     generateBtn.textContent = "✦ Generate study set";
