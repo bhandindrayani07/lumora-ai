@@ -6,13 +6,15 @@ Lumora is an AI-powered study assistant that transforms study notes into summari
 
 ## ✨ Features
 
-- **AI-Generated Summaries** — Simplify study notes into clear, easy-to-understand summaries.
+- **AI-Generated Summaries** — Turn study notes into clear, easy-to-understand summaries.
 - **Interactive Quizzes** — Generate five multiple-choice questions with four options each, correct answers, and explanations.
 - **Revision Flashcards** — Create five flashcards to review important concepts.
-- **Quiz Scoring** — Test your understanding and view your final score.
+- **Quiz Scoring** — Test your understanding and view your score.
+- **Read Summary Aloud** — Listen to generated summaries using text-to-speech controls.
 - **Summary Actions** — Copy or download your generated summary.
-- **Modern Interface** — A clean, student-friendly design with a dark-mode option.
+- **Light and Dark Modes** — Switch themes with your preference saved.
 - **Input Validation** — Validate study notes before requesting AI generation.
+- **Responsive Design** — Use Lumora on desktop and mobile screens.
 
 ## 🛠️ Technologies
 
@@ -43,7 +45,7 @@ lumora-ai/
     └── .gitignore
 ```
 
-The local `server/.env` file stores the API key and should not be committed to GitHub.
+The local `server/.env` file stores the API key and must not be committed to GitHub.
 
 ## 🚀 Getting Started
 
@@ -52,54 +54,55 @@ The local `server/.env` file stores the API key and should not be committed to G
 - [Node.js](https://nodejs.org/)
 - A Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/bhandindrayani07/lumora-ai.git
 cd lumora-ai
 ```
 
-### 2. Install dependencies
+### 2. Install Dependencies
 
 ```bash
 cd server
 npm install
 ```
 
-### 3. Configure the API key
+### 3. Configure the API Key
 
-Create a `.env` file inside the `server` folder:
+Create a `.env` file inside the `server` folder and add:
 
 ```env
 GEMINI_API_KEY=your_api_key_here
 ```
 
-Replace the placeholder with your own API key. Never share or upload the actual key.
+Replace the placeholder with your own API key. Never share your actual key or upload it to GitHub.
 
 ### 4. Start Lumora
 
-From the `server` folder, run:
+From inside the `server` folder, run:
 
 ```bash
 npm start
 ```
 
-Open **http://localhost:3000** in your browser. Keep the server terminal running while using the application.
+Open [http://localhost:3000](http://localhost:3000) in your browser. Keep the terminal running while you use the application.
 
 ## 📖 How to Use
 
 1. Open Lumora in your browser.
 2. Enter your study notes.
 3. Select **Generate Study Set**.
-4. Read the generated summary.
+4. Read or listen to the generated summary.
 5. Answer the quiz questions and check your score.
 6. Review the flashcards to reinforce your learning.
 
 ## 🔐 Security
 
-- Store API keys in the local `.env` file.
-- Exclude `.env` and `node_modules/` from Git using `.gitignore`.
-- Keep API keys out of frontend code and public repositories.
+- Store the Gemini API key in the local `server/.env` file.
+- Keep `.env` and `node_modules/` excluded through `.gitignore`.
+- Never put API keys in frontend JavaScript or public repositories.
+- Configure environment variables securely when deploying the application.
 
 ## 🎯 Project Goal
 
