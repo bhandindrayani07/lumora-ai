@@ -1,17 +1,21 @@
 
-require("dotenv").config();
+require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 
 const express = require("express");
+const path = require("path");
 const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "100kb" }));
-app.use(express.static(".."));
+
+// Serve the frontend files from lumora-ai/public
+app.use(
+  express.static(path.join(__dirname, "..", "public"))
+);
 
 const apiKey = process.env.GEMINI_API_KEY;
-
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 app.post("/api/generate", async function (req, res) {
@@ -119,16 +123,21 @@ Requirements:
       }
     }
 
-    res.json(data);
+    return res.json(data);
   } catch (error) {
     console.error("Study set generation failed:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Could not generate your study set. Please try again."
     });
   }
 });
 
-app.listen(PORT, function () {
-  console.log(`Lumora is running at http://localhost:${PORT}`);
-});
+// Start the server locally; export the app for deployment.
+if (require.main === module) {
+  app.listen(PORT, function () {
+    console.log(`Lumora is running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
