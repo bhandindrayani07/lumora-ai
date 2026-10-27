@@ -1,5 +1,7 @@
 
-require("dotenv").config({ path: require("path").join(__dirname, ".env") });
+require("dotenv").config({
+  path: require("path").join(__dirname, ".env")
+});
 
 const express = require("express");
 const path = require("path");
@@ -11,17 +13,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: "100kb" }));
 
 // Serve the frontend files from lumora-ai/public
-app.use(
-  express.static(path.join(__dirname, "..", "public"))
-);
+app.use(express.static(path.join(__dirname, "..", "public")));
 
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
+// Generate a study set
 app.post("/api/generate", async function (req, res) {
   try {
-    const notes = req.body.notes;
+    const notes = req.body?.notes;
 
+    // Validate the notes
     if (typeof notes !== "string" || !notes.trim()) {
       return res.status(400).json({
         error: "Please enter your study notes first."
@@ -34,15 +36,22 @@ app.post("/api/generate", async function (req, res) {
       });
     }
 
+    // Check API configuration
     if (!ai) {
       return res.status(500).json({
         error: "Gemini API key is not configured on the server."
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: `
+    // Retry temporary Gemini errors up to 3 total attempts
+    let response;
+    let lastError;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: `
 Create a study set from these notes:
 
 ${notes}
@@ -74,7 +83,37 @@ Requirements:
 - Base everything on the notes.
 - Use simple, clear language.
 `
-    });
+        });
+
+        // Generation succeeded
+        break;
+      } catch (error) {
+        lastError = error;
+
+        const message = String(error.message || error);
+
+        const isTemporary =
+          message.includes("503") ||
+          message.includes("UNAVAILABLE") ||
+          message.includes("high demand") ||
+          message.includes("429") ||
+          message.includes("RESOURCE_EXHAUSTED");
+
+        // Do not retry permanent errors
+        if (!isTemporary || attempt === 2) {
+          throw error;
+        }
+
+        // Wait 1 second, then 2 seconds before retrying
+        await new Promise(resolve =>
+          setTimeout(resolve, 1000 * (attempt + 1))
+        );
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error("Gemini returned no response.");
+    }
 
     const text = response.text;
 
@@ -82,6 +121,7 @@ Requirements:
       throw new Error("Gemini returned an empty response.");
     }
 
+    // Remove Markdown code fences if Gemini includes them
     const cleaned = text
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
@@ -90,6 +130,7 @@ Requirements:
 
     const data = JSON.parse(cleaned);
 
+    // Validate the study set
     if (
       typeof data.summary !== "string" ||
       !Array.isArray(data.quiz) ||
@@ -100,6 +141,7 @@ Requirements:
       throw new Error("The AI returned an unexpected study-set format.");
     }
 
+    // Validate quiz questions
     for (const question of data.quiz) {
       if (
         typeof question.question !== "string" ||
@@ -114,6 +156,7 @@ Requirements:
       }
     }
 
+    // Validate flashcards
     for (const card of data.flashcards) {
       if (
         typeof card.front !== "string" ||
@@ -125,7 +168,11 @@ Requirements:
 
     return res.json(data);
   } catch (error) {
-    console.error("Study set generation failed:", error.message);
+    // Keep the detailed error in Vercel Runtime Logs
+    console.error(
+      "Study set generation failed:",
+      error.message || error
+    );
 
     return res.status(500).json({
       error: "Could not generate your study set. Please try again."
@@ -133,7 +180,7 @@ Requirements:
   }
 });
 
-// Start the server locally; export the app for deployment.
+// Start the server locally; Vercel can import the app
 if (require.main === module) {
   app.listen(PORT, function () {
     console.log(`Lumora is running at http://localhost:${PORT}`);
