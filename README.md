@@ -114,6 +114,6 @@ Lumora aims to make studying more engaging and efficient by turning ordinary not
 
 Student Project · AI-Powered Learning
 
----
+--
 
 *Made for curious minds. ✦ Lumora*
