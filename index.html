@@ -115,7 +115,6 @@
           </div>
         </div>
 
-        <!-- Clear History button -->
         <div class="history-actions">
           <button type="button" id="clearHistoryBtn">
             Clear History
@@ -148,6 +147,28 @@
           <p>Your generated summary will appear here.</p>
         </div>
 
+        <!-- Read Summary Aloud -->
+        <div class="speech-controls">
+
+          <button type="button" id="readSummaryBtn">
+            🔊 Listen to Summary
+          </button>
+
+          <button type="button" id="pauseSummaryBtn" disabled>
+            ⏸ Pause
+          </button>
+
+          <button type="button" id="stopSummaryBtn" disabled>
+            ⏹ Stop
+          </button>
+
+          <p id="speechStatus" aria-live="polite">
+            Listen to your generated summary aloud.
+          </p>
+
+        </div>
+
+        <!-- Existing summary actions -->
         <div class="result-actions">
           <button id="copySummaryBtn" type="button">
             Copy summary

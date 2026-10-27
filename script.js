@@ -13,10 +13,20 @@ const quizScore = document.querySelector("#quizScore");
 const historyContainer = document.querySelector("#historyContainer");
 const clearHistoryBtn = document.querySelector("#clearHistoryBtn");
 
+// Read Summary Aloud controls
+const readSummaryBtn = document.querySelector("#readSummaryBtn");
+const pauseSummaryBtn = document.querySelector("#pauseSummaryBtn");
+const stopSummaryBtn = document.querySelector("#stopSummaryBtn");
+const speechStatus = document.querySelector("#speechStatus");
+
 let quizQuestions = [];
 let currentScore = 0;
 let answeredQuestions = new Set();
 let studyHistory = [];
+
+// Speech state
+let currentUtterance = null;
+let speechPaused = false;
 
 // Load saved study history
 try {
@@ -82,10 +92,134 @@ function addText(parent, tag, text, className = "") {
   return element;
 }
 
+// Get readable summary text
+function getSummaryText() {
+  return summaryOutput.innerText.trim();
+}
+
+// Update speech controls
+function updateSpeechControls(isSpeaking) {
+  if (!readSummaryBtn || !pauseSummaryBtn || !stopSummaryBtn) return;
+
+  readSummaryBtn.disabled = isSpeaking;
+  pauseSummaryBtn.disabled = !isSpeaking;
+  stopSummaryBtn.disabled = !isSpeaking;
+}
+
+// Stop speech safely
+function stopSummarySpeech(showMessage = true) {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  currentUtterance = null;
+  speechPaused = false;
+
+  updateSpeechControls(false);
+
+  if (showMessage && speechStatus) {
+    speechStatus.textContent = "Reading stopped.";
+  }
+}
+
+// Read the summary aloud
+if (
+  readSummaryBtn &&
+  pauseSummaryBtn &&
+  stopSummaryBtn &&
+  speechStatus
+) {
+  readSummaryBtn.addEventListener("click", function () {
+    if (!("speechSynthesis" in window)) {
+      speechStatus.textContent =
+        "Sorry, your browser does not support text-to-speech.";
+      return;
+    }
+
+    const summary = getSummaryText();
+
+    if (
+      !summary ||
+      summary === "Your generated summary will appear here." ||
+      summary === "Generating your summary..." ||
+      summary === "Your summary could not be generated."
+    ) {
+      speechStatus.textContent =
+        "Generate or open a study summary before listening.";
+      return;
+    }
+
+    // Stop any previous reading
+    window.speechSynthesis.cancel();
+
+    currentUtterance = new SpeechSynthesisUtterance(summary);
+    currentUtterance.lang = "en-IN";
+    currentUtterance.rate = 0.95;
+    currentUtterance.pitch = 1;
+
+    currentUtterance.onstart = function () {
+      speechPaused = false;
+      speechStatus.textContent = "Reading your summary aloud...";
+      updateSpeechControls(true);
+    };
+
+    currentUtterance.onend = function () {
+      currentUtterance = null;
+      speechPaused = false;
+      speechStatus.textContent = "Finished reading your summary.";
+      updateSpeechControls(false);
+    };
+
+    currentUtterance.onerror = function (event) {
+      currentUtterance = null;
+      speechPaused = false;
+      updateSpeechControls(false);
+
+      if (event.error !== "canceled" && event.error !== "interrupted") {
+        speechStatus.textContent =
+          "Unable to read the summary. Please try again.";
+      }
+    };
+
+    speechStatus.textContent = "Starting audio...";
+    updateSpeechControls(true);
+    window.speechSynthesis.speak(currentUtterance);
+  });
+
+  // Pause and resume speech
+  pauseSummaryBtn.addEventListener("click", function () {
+    if (!("speechSynthesis" in window)) return;
+
+    if (speechPaused) {
+      window.speechSynthesis.resume();
+      speechPaused = false;
+      pauseSummaryBtn.textContent = "⏸ Pause";
+      speechStatus.textContent = "Reading your summary aloud...";
+    } else if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+      speechPaused = true;
+      pauseSummaryBtn.textContent = "▶ Resume";
+      speechStatus.textContent = "Reading paused.";
+    }
+  });
+
+  // Stop speech
+  stopSummaryBtn.addEventListener("click", function () {
+    stopSummarySpeech(true);
+  });
+}
+
 // Display the summary
 function showSummary(summary) {
+  // Stop old audio when a different summary is displayed
+  stopSummarySpeech(false);
+
   summaryOutput.replaceChildren();
   addText(summaryOutput, "p", summary);
+
+  if (speechStatus) {
+    speechStatus.textContent = "Ready to read your summary aloud.";
+  }
 
   const copyButton = document.querySelector("#copySummaryBtn");
   const downloadButton = document.querySelector("#downloadSummaryBtn");
@@ -364,10 +498,16 @@ generateBtn.addEventListener("click", async function () {
   generateBtn.textContent = "✦ Generating...";
   message.textContent = "Lumora is preparing your study set...";
 
+  stopSummarySpeech(false);
+
   summaryOutput.textContent = "Generating your summary...";
   quizContainer.textContent = "Generating your quiz...";
   flashcardsContainer.textContent = "Generating your flashcards...";
   quizScore.textContent = "";
+
+  if (speechStatus) {
+    speechStatus.textContent = "Your summary is being generated.";
+  }
 
   try {
     const response = await fetch("/api/generate", {
@@ -444,6 +584,8 @@ generateBtn.addEventListener("click", async function () {
   } catch (error) {
     console.error("Generation error:", error);
 
+    stopSummarySpeech(false);
+
     summaryOutput.textContent =
       "Your summary could not be generated.";
 
@@ -452,6 +594,11 @@ generateBtn.addEventListener("click", async function () {
 
     flashcardsContainer.textContent =
       "Your flashcards could not be generated.";
+
+    if (speechStatus) {
+      speechStatus.textContent =
+        "Generate a summary before listening.";
+    }
 
     message.textContent =
       error.message === "Failed to fetch"
