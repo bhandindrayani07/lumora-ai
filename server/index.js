@@ -50,7 +50,7 @@ app.post("/api/generate", async function (req, res) {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+         model: "gemini-3.6-flash",
           contents: `
 Create a study set from these notes:
 
